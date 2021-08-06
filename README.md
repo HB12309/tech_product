@@ -1,5 +1,5 @@
 # 想把技术打造成产品。
-### 在这里，分享Java后端技术、做计算机科普
+### 在这里，分享Java后端技术、做计算机科普、想分享投资心得。
 
 ![image.png](https://pic3.zhimg.com/80/v2-acdf2c6dfc293644aeda95caa5837ba9_1440w.png)
 

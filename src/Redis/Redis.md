@@ -38,3 +38,11 @@ redis这样设计巧妙的把每次rehash的操作平摊到了对该字典的一
 如果你有学习过Java中的LinkedList，我只能说几乎就是一样的，只是换成了c来实现。双向链表在redis中的应用也同样广泛，比如在服务端初始化的时候，可以看到redisServer有很多字段都是这个数据结构的。
 1.list也是redis中非常重要的数据结构，很多地方都会用到。
 2.list的源码写的非常通俗易懂，如果阅读过Java中的LinkedList，再来看这里的源码几乎就是秒懂，就是最基本的双向链表的实现。
+
+```
+string == Map<String，String>
+map    == Map<String，Map<String>>
+list   == Map<String ， List<String>>
+set    == Map<String，Set<String>>
+zset   == Map<String，ZSet<String>>
+```

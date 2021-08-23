@@ -173,6 +173,9 @@ public class Customer{
 
 这时候返回的BeanA的代理对象就不是null了，所以BeanB也可以完成实例化，接着BeanA也完成实例化了。但是回到main方法内，在打印BeanB时，如果你打开debug，你会发现BeanB中的属性BeanA还是一个代理类，但是接着打印beanB.getBeanA()时发现它就是指向BeanA的引用地址。其实BeanB中的属性BeanA拿到真正BeanA实例化的引用就是在第一次调用getBeanA()的时候，它就会调用之前自定义封装的TargetSource的getTarget()的方法，最后还是通过调用getBean()方法，从缓存中拿到BeanA的实例。
 
+1、可以看出actualTimeBean这个bean是在容器启动过程中被创建好的。
+2、代码结合输出可以看出来，LazyInitBean在容器启动过程中并没有创建，当我们调用context.getBean方法的时候，LazyInitBean才被创建的。
+
 ## AOP
 
 AOP（Aspect Oriented Programming）：面向切面编程，与面向对象编程OOP的关键单位是类不一样，它的关键单位是切面，它通过提供改变程序结构的方式来补充OOP。通俗点就是说我们可以通过预编译或者运行时动态代理在不修改方法源码的情况下增强方法的功能。
@@ -273,7 +276,8 @@ autowire-candidate：设置当前bean在被其他对象作为自动注入对象�
 
 PS: 一些 xml的配置，不要记得太清楚，要用的时候再查询就好了
 
-### Spring 中 Bean 的⽣命周期、Bean 的实例化和初始化
+## Spring 中 Bean 的⽣命周期、Bean 的实例化和初始化
+### Bean生命周期-描述1
 1-类加载校验
 2-⽅法覆盖校验和准备
 3-如果 Bean 配置了实例化的前置处理器，则返回对应的代理对象
@@ -281,13 +285,175 @@ PS: 一些 xml的配置，不要记得太清楚，要用的时候再查询就好
 
 4、结合代码来看，Bean 的⽣命周期概括起来就是4个阶段：
 实例化（Instantiation）
-属性填充（Populate）
+属性填充（Populate），属性填充涉及到依赖注⼊
 初始化（Initialization）
 销毁（Destruction）
-本⽂先来分析实例化和初始化两个阶段，属性填充涉及到依赖注⼊
 
 结合代码来看，Bean 的初始化阶段⼲了四件事情：
 Aware相关回调
 初始化前置处理
 初始化
 初始化后置处理
+
+### Bean生命周期-描述2
+阶段1：Bean元信息配置阶段
+阶段2：Bean元信息解析阶段
+阶段3：将Bean注册到容器中
+阶段4：BeanDefinition合并阶段
+阶段5：Bean Class加载阶段
+阶段6：Bean实例化阶段（2个小阶段）
+Bean实例化前阶段
+Bean实例化阶段
+阶段7：合并后的BeanDefinition处理
+阶段8：属性赋值阶段（3个小阶段）
+Bean实例化后阶段
+Bean属性赋值前阶段
+Bean属性赋值阶段
+阶段9：Bean初始化阶段（5个小阶段）
+Bean Aware接口回调阶段
+Bean初始化前阶段
+Bean初始化阶段
+Bean初始化后阶段
+阶段10：所有单例bean初始化完成后阶段
+阶段11：Bean的使用阶段
+阶段12：Bean销毁前阶段
+阶段13：Bean销毁阶段
+
+注入，是把Bean注入到 context 里面
+装配，是Bean之间的关系，有依赖和合作
+
+baseService可以拎出来，用的时候用`parent`
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-4.3.xsd">
+
+    <bean id="serviceA" class="com.javacode2018.lesson001.demo12.ServiceA"/>
+
+    <bean id="baseService" abstract="true">
+        <property name="name" value="路人甲Java"/>
+        <property name="serviceA" ref="serviceA"/>
+    </bean>
+
+    <bean id="serviceB" class="com.javacode2018.lesson001.demo12.ServiceB" parent="baseService"/>
+
+    <bean id="serviceC" class="com.javacode2018.lesson001.demo12.ServiceC" parent="baseService"/>
+
+</beans>
+```
+
+此外singleton的生命周期由容器来管理，但是prototype的生命周期得你自己管理。  
+
+他这个文章说法本来就有问题，HttpServeltRequest之所以没问题是因为：注入的这个HttpServletRequest，其实只是一个代理类，每次调用它的方法时，会用RequestContextHolder.currentRequestAttributes().getRequest() 来获取到当前的实际http请求，然后再调用实际request的对应的方法。
+
+lookup-method replaced-method，就是scope寻找的时候用的，有时候用单例，有时候用多例，有时候用 request，单例 == 在整个spring容器内，这个class只有1个实例
+
+### 父子容器
+前提，理解一下 mvc & boot 的区别
+
+Spring Boot只是承载者，辅助你简化项目搭建过程的。如果承载的是WEB项目，使用Spring MVC作为MVC框架，那么工作流程和你上面描述的是完全一样的，因为这部分工作是Spring MVC做的而不是Spring Boot。对使用者来说，换用Spring Boot以后，项目初始化方法变了，配置文件变了，另外就是不需要单独安装Tomcat这类容器服务器了，maven打出jar包直接跑起来就是个网站，但你最核心的业务逻辑实现与业务流程实现没有任何变化。所以，用最简练的语言概括就是：Spring 是一个“引擎”； Spring MVC 是基于Spring的一个 MVC 框架 ；Spring Boot 是基于Spring4的条件注册的一套快速开发整合包。
+
+#### 特点
+父容器和子容器是相互隔离的，他们内部可以存在名称相同的bean
+子容器可以访问父容器中的bean，而父容器不能访问子容器中的bean
+调用子容器的getBean方法获取bean的时候，会沿着当前容器开始向上面的容器进行查找，直到找到对应的bean为止
+子容器中可以通过任何注入方式注入父容器中的bean，而父容器中是无法注入子容器中的bean，原因是第2点
+
+问题1：springmvc中只使用一个容器是否可以？
+
+只使用一个容器是可以正常运行的。
+
+问题2：那么springmvc中为什么需要用到父子容器？
+
+通常我们使用springmvc的时候，采用3层结构，controller层，service层，dao层；父容器中会包含dao层和service层，而子容器中包含的只有controller层；这2个容器组成了父子容器的关系，controller层通常会注入service层的bean。
+
+采用父子容器可以避免有些人在service层去注入controller层的bean，导致整个依赖层次是比较混乱的。
+
+父容器和子容器的需求也是不一样的，比如父容器中需要有事务的支持，会注入一些支持事务的扩展组件，而子容器中controller完全用不到这些，对这些并不关心，子容器中需要注入一下springmvc相关的bean，而这些bean父容器中同样是不会用到的，也是不关心一些东西，将这些相互不关心的东西隔开，可以有效的避免一些不必要的错误，而父子容器加载的速度也会快一些。
+
+## @Value
+
+我：@Value可以标注在字段上面，可以将外部配置文件中的数据，比如可以将数据库的一些配置信息放在配置文件中，然后通过@Value的方式将其注入到bean的一些字段中
+我：嗯，我们项目最常用更多就是通过@Value来引用Properties文件中的配置
+可以将配置信息放在db或者其他存储介质中，容器启动的时候，可以将这些信息加载到Environment中，@Value中应用的值最终是通过Environment来解析的，所以只需要扩展一下Environment就可以实现了。
+springboot中有个@RefreshScope注解就可以实现你说的这个功能
+
+```java
+public enum ScopedProxyMode {
+    DEFAULT,
+    NO,
+    INTERFACES,
+    TARGET_CLASS;
+}
+```
+当自定义的Scope中proxyMode=ScopedProxyMode.TARGET_CLASS的时候，会给这个bean创建一个代理对象，调用代理对象的任何方法，都会调用这个自定义的作用域实现类（上面的BeanMyScope）中get方法来重新来获取这个bean对象。
+#### 自定义一个Scope：RefreshScope
+
+
+注意spring的4个阶段：bean定义阶段、BeanFactory后置处理阶段、BeanPostProcessor注册阶段、单例bean创建组装阶段
+BeanDefinitionRegistryPostProcessor会在第一个阶段被调用，用来实现bean的注册操作，这个阶段会完成所有bean的注册
+BeanFactoryPostProcessor会在第2个阶段被调用，到这个阶段时候，bean此时已经完成了所有bean的注册操作，这个阶段中你可以对BeanFactory中的一些信息进行修改，比如修改阶段1中一些bean的定义信息，修改BeanFactory的一些配置等等
+阶段2的时候，2个禁止操作：禁止注册bean、禁止从容器中获取bean
+本文介绍的2个接口的实现类可以通过PriorityOrdered接口或者Ordered接口来指定顺序
+
+### @EnableAsync
+默认情况下，@EnableAsync使用内置的线程池来异步调用方法，不过我们也可以自定义异步执行任务的线程池。
+
+一个系统中可能有很多业务，比如充值服务、提现服务或者其他服务，这些服务中都有一些方法需要异步执行，默认情况下他们会使用同一个线程池去执行，如果有一个业务量比较大，占用了线程池中的大量线程，此时会导致其他业务的方法无法执行，那么我们可以采用线程隔离的方式，对不同的业务使用不同的线程池，相互隔离，互不影响。
+@Async注解有个value参数，用来指定线程池的bean名称，方法运行的时候，就会采用指定的线程池来执行目标方法。
+使用步骤
+在spring容器中，自定义线程池相关的bean
+@Async("线程池bean名称")
+```java
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+
+import java.util.concurrent.Executor;
+
+@EnableAsync //@0：启用方法异步调用
+@ComponentScan
+public class MainConfig5 {
+
+    //@1：值业务线程池bean名称
+    public static final String RECHARGE_EXECUTORS_BEAN_NAME = "rechargeExecutors";
+    //@2：提现业务线程池bean名称
+    public static final String CASHOUT_EXECUTORS_BEAN_NAME = "cashOutExecutors";
+
+    /**
+     * @3：充值的线程池，线程名称以recharge-thread-开头
+     * @return
+     */
+    @Bean(RECHARGE_EXECUTORS_BEAN_NAME)
+    public Executor rechargeExecutors() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(10);
+        executor.setMaxPoolSize(100);
+        //线程名称前缀
+        executor.setThreadNamePrefix("recharge-thread-");
+        return executor;
+    }
+
+    /**
+     * @4: 充值的线程池，线程名称以cashOut-thread-开头
+     *
+     * @return
+     */
+    @Bean(CASHOUT_EXECUTORS_BEAN_NAME)
+    public Executor cashOutExecutors() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(10);
+        executor.setMaxPoolSize(100);
+        //线程名称前缀
+        executor.setThreadNamePrefix("cashOut-thread-");
+        return executor;
+    }
+}
+```
+
+内部使用aop实现的，@EnableAsync会引入一个bean后置处理器：AsyncAnnotationBeanPostProcessor，将其注册到spring容器，这个bean后置处理器在所有bean创建过程中，判断bean的类上是否有@Async注解或者类中是否有@Async标注的方法，如果有，会通过aop给这个bean生成代理对象，会在代理对象中添加一个切面：org.springframework.scheduling.annotation.AsyncAnnotationAdvisor，这个切面中会引入一个拦截器：AnnotationAsyncExecutionInterceptor，方法异步调用的关键代码就是在这个拦截器的invoke方法中实现的.
+
+

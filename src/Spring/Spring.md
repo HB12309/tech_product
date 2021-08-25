@@ -457,3 +457,18 @@ public class MainConfig5 {
 内部使用aop实现的，@EnableAsync会引入一个bean后置处理器：AsyncAnnotationBeanPostProcessor，将其注册到spring容器，这个bean后置处理器在所有bean创建过程中，判断bean的类上是否有@Async注解或者类中是否有@Async标注的方法，如果有，会通过aop给这个bean生成代理对象，会在代理对象中添加一个切面：org.springframework.scheduling.annotation.AsyncAnnotationAdvisor，这个切面中会引入一个拦截器：AnnotationAsyncExecutionInterceptor，方法异步调用的关键代码就是在这个拦截器的invoke方法中实现的.
 
 
+spring bean的整个生命周期中穿插了各种各样的组件，工具等信息，spring在各个阶段也为我们提供了各式各样的扩展点，其中最核心的分为两大类，PostProcessor类型接口的实现类和Aware接口的实现类
+PostProcessor类型接口常用类分为两种，一种是BeanFactoryPostProcessor，另一种是BeanPostProcessor
+BeanFactoryPostProcessor与BeanPostProcessor的使用区别
+PostProcessor名称	作用
+BeanFactoryPostProcessor	关于对象工厂BeanFactory创建完毕的回调处理
+BeanPostProcessor	关于通过对象工厂BeanFactory创建对象前后的回调处理
+
+```java
+public interface BeanPostProcessor {
+    //bean初始化方法调用前被调用
+    Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException;
+    //bean初始化方法调用后被调用
+    Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException;
+}
+```

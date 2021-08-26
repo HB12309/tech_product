@@ -27,3 +27,11 @@ LSN全称是：log sequence number。
 就是一个序列号。并且表空间中的数据页、缓存页、内存中的rodo log、磁盘中的redo log以及checkponit都有LSN标记。
 
 LSN又啥用呢？比如MySQL重启时会对比数据页的LSN和redo log的LSN的大小，如果前者的LSN比后者小。说明数据页中缺失了一部分数据。如果满足其他数据恢复的条件，MySQL就会将LSN之后的这些redo 进行一次回放，完成数据的恢复。
+
+----
+
+https://juejin.cn/post/6897044615208108040
+ 事务已提交，数据却丢了，赶紧检查下这个配置。
+ 原因：redo log ，log buffer , OS Cache , 磁盘文件。
+
+这里刷盘的逻辑，加上里面有2个缓冲带，一个是MySQL的，一个是OS的，刷盘策略、定时刷盘还是立马刷盘，这里会导致数据的丢失，然后要根据业务的不同，去配置`innodb_flush_log_at_trx_commit`字段。

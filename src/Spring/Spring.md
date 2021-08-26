@@ -472,3 +472,11 @@ public interface BeanPostProcessor {
     Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException;
 }
 ```
+
+### Aware
+
+Aware是一个标记性的超接口（顶级接口）,中文翻译感知感觉，就是对于Bean的直接透底
+
+- 实现BeanFactoryAware接口的Bean，可以获取到BeanFactory组件对象。
+- 实现EnvironmentAware接口的Bean，可以获取到Environment组件对象。
+- BeanNameAware 实现该接口的Bean，可以获取到Bean的名称。

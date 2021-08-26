@@ -29,4 +29,20 @@ ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DI
 rowid排序：sort_buffer可以放更多数据，但是需要再回到原表去取数据，比全字段排序多一次回表。
 一般情况下，对于InnoDB存储引擎，会优先使用全字段排序。可以发现 max_length_for_sort_data 参数设置为1024，这个数比较大的。一般情况下，排序字段不会超过这个值，也就是都会走全字段排序。
 
+## 优化
+
+（1）负向比较（例如：!=）会引发全表扫描；
+（2）如果允许空值，不等于(!=)的查询，不会将空值行(row)包含进来，此时的结果集往往是不符合预期的，此时往往要加上一个or条件，把空值(is null)结果包含进来；
+（3）or可能会导致全表扫描，此时可以优化为union查询；
+（4）建表时加上默认(default)值，这样能避免空值的坑；
+（5）explain工具是一个好东西；
+
+InnoDB 支持一个表一个文件，此时：
+truncate 会一次性把表干掉，且不会激活触发器，速度非常快；
+delete from table 则会一行一行删除，会激活触发器，速度比较慢。
+_画外音：_delete 数据，是要记录日志的，truncate 表不需要记录日志。
+四、
+当表中有列被其它表作为外键 (foreign key) 时：
+truncate 会是失败；
+delete 则会成功。
 

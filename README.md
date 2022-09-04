@@ -9,4 +9,4 @@
 
 ## 欢迎加私人微信，分享技术和投资，朋友圈点赞之交，挺好的。
 
-<img src="https://pic1.zhimg.com/80/v2-3b18a82c2281e08dbec3d796ca4f48cf_1440w.jpeg" alt="微信" width="300" height="400"/>
+<img src="./assets/my_wx.jpeg" alt="微信" width="300" height="400"/>
